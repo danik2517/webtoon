@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панорамный стартап</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        body, html {
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .panorama-container {
+            width: 100%;
+            height: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            cursor: grab;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE и Edge */
+        }
+        
+        /* Скрытие скроллбара для Chrome, Safari и Opera */
+        .panorama-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .panorama-image {
+            width: auto;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: #4a90e2;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+        
+        .loading-text {
+            color: #fff;
+            font-size: 18px;
+        }
+        
+        .instruction {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 10;
+            transition: opacity 3s ease;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .instruction {
+                font-size: 12px;
+                bottom: 10px;
+                padding: 8px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Загрузка панорамы...</div>
+    </div>
+    
+    <div class="container">
+        <div class="panorama-container" id="panoramaContainer">
+            <img src="Стартап.png" alt="Стартап панорама" class="panorama-image" id="panoramaImage">
+        </div>
+    </div>
+    
+    <div class="instruction" id="instruction">
+        Используйте колесо мыши или перетаскивание для навигации по панораме
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const panoramaContainer = document.getElementById('panoramaContainer');
+            const panoramaImage = document.getElementById('panoramaImage');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const instruction = document.getElementById('instruction');
+            
+            // Показать инструкцию на 5 секунд, затем скрыть
+            setTimeout(() => {
+                instruction.style.opacity = '0';
+                setTimeout(() => {
+                    instruction.style.display = 'none';
+                }, 3000);
+            }, 5000);
+            
+            // Загрузка изображения
+            panoramaImage.onload = function() {
+                // Скрываем индикатор загрузки
+                setTimeout(() => {
+                    loadingOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingOverlay.style.display = 'none';
+                    }, 500);
+                }, 500);
+                
+                // Устанавливаем правильные размеры изображения
+                const originalWidth = 2000;
+                const originalHeight = 19200;
+                
+                // Рассчитываем высоту изображения для текущего окна просмотра
+                const viewportWidth = window.innerWidth;
+                const aspectRatio = originalHeight / originalWidth;
+                const calculatedHeight = viewportWidth * aspectRatio;
+                
+                // Устанавливаем размеры изображения
+                panoramaImage.style.height = `${calculatedHeight}px`;
+                panoramaImage.style.width = `${viewportWidth}px`;
+                
+                // Центрируем изображение по вертикали
+                panoramaContainer.scrollTop = (calculatedHeight - window.innerHeight) / 2;
+            };
+            
+            // Если изображение уже загружено (из кеша)
+            if (panoramaImage.complete) {
+                panoramaImage.onload();
+            }
+            
+            // Обработчик для перетаскивания изображения
+            let isDragging = false;
+            let startX, startY;
+            let scrollLeft, scrollTop;
+            
+            panoramaContainer.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                panoramaContainer.style.cursor = 'grabbing';
+                startX = e.pageX - panoramaContainer.offsetLeft;
+                startY = e.pageY - panoramaContainer.offsetTop;
+                scrollLeft = panoramaContainer.scrollLeft;
+                scrollTop = panoramaContainer.scrollTop;
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                panoramaContainer.style.cursor = 'grab';
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const x = e.pageX - panoramaContainer.offsetLeft;
+                const y = e.pageY - panoramaContainer.offsetTop;
+                const walkX = (x - startX) * 2;
+                const walkY = (y - startY) * 2;
+                panoramaContainer.scrollLeft = scrollLeft - walkX;
+                panoramaContainer.scrollTop = scrollTop - walkY;
+            });
+            
+            // Обработчик для колеса мыши (горизонтальный скроллинг)
+            panoramaContainer.addEventListener('wheel', (e) => {
+                // Для горизонтального скроллинга
+                if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+                    panoramaContainer.scrollLeft += e.deltaX;
+                } else {
+                    // Для вертикального скроллинга
+                    panoramaContainer.scrollTop += e.deltaY;
+                }
+                e.preventDefault();
+            });
+            
+            // Обработчик для сенсорных устройств
+            let touchStartX, touchStartY;
+            
+            panoramaContainer.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            });
+            
+            panoramaContainer.addEventListener('touchmove', (e) => {
+                if (!touchStartX || !touchStartY) return;
+                
+                const touchX = e.touches[0].clientX;
+                const touchY = e.touches[0].clientY;
+                
+                const diffX = touchStartX - touchX;
+                const diffY = touchStartY - touchY;
+                
+                panoramaContainer.scrollLeft += diffX * 2;
+                panoramaContainer.scrollTop += diffY * 2;
+                
+                touchStartX = touchX;
+                touchStartY = touchY;
+                
+                e.preventDefault();
+            });
+            
+            // Обработчик изменения размера окна
+            window.addEventListener('resize', () => {
+                const viewportWidth = window.innerWidth;
+                const originalWidth = 2000;
+                const originalHeight = 19200;
+                const aspectRatio = originalHeight / originalWidth;
+                const calculatedHeight = viewportWidth * aspectRatio;
+                
+                panoramaImage.style.height = `${calculatedHeight}px`;
+                panoramaImage.style.width = `${viewportWidth}px`;
+            });
+        });
+    </script>
+</body>
+</html>
