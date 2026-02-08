@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Панорамный стартап</title>
+    <title>Стартап панорама - Только для мобильных</title>
     <style>
         * {
             margin: 0;
@@ -22,6 +22,41 @@
             font-family: 'Segoe UI', sans-serif;
         }
         
+        .desktop-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #111;
+            color: #fff;
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .desktop-message h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #4a90e2;
+        }
+        
+        .desktop-message p {
+            font-size: 18px;
+            margin-bottom: 30px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+        
+        .mobile-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
         .container {
             position: relative;
             width: 100%;
@@ -37,6 +72,7 @@
             cursor: grab;
             scrollbar-width: none; /* Firefox */
             -ms-overflow-style: none; /* IE и Edge */
+            -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
         }
         
         /* Скрытие скроллбара для Chrome, Safari и Opera */
@@ -99,16 +135,38 @@
             to { transform: rotate(360deg); }
         }
         
-        @media (max-width: 768px) {
+        /* Медиа-запрос для определения мобильных устройств */
+        @media (min-width: 768px) {
+            .desktop-message {
+                display: flex;
+            }
+            
+            .container, .loading-overlay, .instruction {
+                display: none !important;
+            }
+        }
+        
+        @media (max-width: 767px) {
             .instruction {
                 font-size: 12px;
                 bottom: 10px;
                 padding: 8px 15px;
             }
+            
+            .desktop-message {
+                display: none !important;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="desktop-message" id="desktopMessage">
+        <div class="mobile-icon">📱</div>
+        <h1>Только для мобильных устройств</h1>
+        <p>Эта панорамная галерея доступна только на мобильных устройствах. Пожалуйста, откройте эту страницу на смартфоне или планшете.</p>
+        <p><small>Размер экрана вашего устройства слишком велик для просмотра этого контента.</small></p>
+    </div>
+    
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
         <div class="loading-text">Загрузка панорамы...</div>
@@ -121,7 +179,7 @@
     </div>
     
     <div class="instruction" id="instruction">
-        Используйте колесо мыши или перетаскивание для навигации по панораме
+        Перетаскивайте пальцем для навигации по панораме
     </div>
 
     <script>
@@ -130,6 +188,18 @@
             const panoramaImage = document.getElementById('panoramaImage');
             const loadingOverlay = document.getElementById('loadingOverlay');
             const instruction = document.getElementById('instruction');
+            const desktopMessage = document.getElementById('desktopMessage');
+            
+            // Проверяем, является ли устройство мобильным
+            function isMobileDevice() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 767;
+            }
+            
+            // Если это не мобильное устройство, показываем сообщение
+            if (!isMobileDevice()) {
+                desktopMessage.style.display = 'flex';
+                return; // Прекращаем выполнение скрипта для десктопов
+            }
             
             // Показать инструкцию на 5 секунд, затем скрыть
             setTimeout(() => {
@@ -171,76 +241,97 @@
                 panoramaImage.onload();
             }
             
-            // Обработчик для перетаскивания изображения
-            let isDragging = false;
-            let startX, startY;
-            let scrollLeft, scrollTop;
-            
-            panoramaContainer.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                panoramaContainer.style.cursor = 'grabbing';
-                startX = e.pageX - panoramaContainer.offsetLeft;
-                startY = e.pageY - panoramaContainer.offsetTop;
-                scrollLeft = panoramaContainer.scrollLeft;
-                scrollTop = panoramaContainer.scrollTop;
-            });
-            
-            document.addEventListener('mouseup', () => {
-                isDragging = false;
-                panoramaContainer.style.cursor = 'grab';
-            });
-            
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                const x = e.pageX - panoramaContainer.offsetLeft;
-                const y = e.pageY - panoramaContainer.offsetTop;
-                const walkX = (x - startX) * 2;
-                const walkY = (y - startY) * 2;
-                panoramaContainer.scrollLeft = scrollLeft - walkX;
-                panoramaContainer.scrollTop = scrollTop - walkY;
-            });
-            
-            // Обработчик для колеса мыши (горизонтальный скроллинг)
-            panoramaContainer.addEventListener('wheel', (e) => {
-                // Для горизонтального скроллинга
-                if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-                    panoramaContainer.scrollLeft += e.deltaX;
-                } else {
-                    // Для вертикального скроллинга
-                    panoramaContainer.scrollTop += e.deltaY;
-                }
-                e.preventDefault();
-            });
-            
-            // Обработчик для сенсорных устройств
+            // Обработчики для сенсорных устройств (мобильных)
             let touchStartX, touchStartY;
+            let scrollLeft, scrollTop;
+            let isScrolling = false;
             
             panoramaContainer.addEventListener('touchstart', (e) => {
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
-            });
+                scrollLeft = panoramaContainer.scrollLeft;
+                scrollTop = panoramaContainer.scrollTop;
+                isScrolling = true;
+                
+                // Отменяем стандартное поведение браузера
+                e.preventDefault();
+            }, { passive: false });
             
             panoramaContainer.addEventListener('touchmove', (e) => {
-                if (!touchStartX || !touchStartY) return;
+                if (!isScrolling) return;
                 
                 const touchX = e.touches[0].clientX;
                 const touchY = e.touches[0].clientY;
                 
-                const diffX = touchStartX - touchX;
-                const diffY = touchStartY - touchY;
+                // Вычисляем разницу для плавного скролла
+                const diffX = (touchStartX - touchX) * 1.2; // Нормальная скорость
+                const diffY = (touchStartY - touchY) * 1.2;
                 
-                panoramaContainer.scrollLeft += diffX * 2;
-                panoramaContainer.scrollTop += diffY * 2;
+                panoramaContainer.scrollLeft = scrollLeft + diffX;
+                panoramaContainer.scrollTop = scrollTop + diffY;
                 
-                touchStartX = touchX;
-                touchStartY = touchY;
-                
+                // Отменяем стандартное поведение браузера
                 e.preventDefault();
+            }, { passive: false });
+            
+            panoramaContainer.addEventListener('touchend', () => {
+                isScrolling = false;
+            });
+            
+            // Обработчик для инерционного скролла (если нужно)
+            let velocityX = 0;
+            let velocityY = 0;
+            let lastTouchX, lastTouchY;
+            let lastMoveTime = 0;
+            
+            // Дополнительная обработка для инерции при быстрых свайпах
+            panoramaContainer.addEventListener('touchmove', (e) => {
+                const currentTime = Date.now();
+                const touchX = e.touches[0].clientX;
+                const touchY = e.touches[0].clientY;
+                
+                if (lastTouchX !== undefined && lastTouchY !== undefined && lastMoveTime !== 0) {
+                    const timeDiff = currentTime - lastMoveTime;
+                    if (timeDiff > 0) {
+                        velocityX = (lastTouchX - touchX) / timeDiff * 30;
+                        velocityY = (lastTouchY - touchY) / timeDiff * 30;
+                    }
+                }
+                
+                lastTouchX = touchX;
+                lastTouchY = touchY;
+                lastMoveTime = currentTime;
+            });
+            
+            panoramaContainer.addEventListener('touchend', () => {
+                // Инерционный скролл
+                if (Math.abs(velocityX) > 0.1 || Math.abs(velocityY) > 0.1) {
+                    const inertiaScroll = () => {
+                        panoramaContainer.scrollLeft += velocityX;
+                        panoramaContainer.scrollTop += velocityY;
+                        
+                        // Замедление
+                        velocityX *= 0.95;
+                        velocityY *= 0.95;
+                        
+                        if (Math.abs(velocityX) > 0.1 || Math.abs(velocityY) > 0.1) {
+                            requestAnimationFrame(inertiaScroll);
+                        }
+                    };
+                    
+                    requestAnimationFrame(inertiaScroll);
+                }
             });
             
             // Обработчик изменения размера окна
             window.addEventListener('resize', () => {
+                if (!isMobileDevice()) {
+                    // Если после изменения размера это уже не мобильное устройство
+                    desktopMessage.style.display = 'flex';
+                    document.querySelector('.container').style.display = 'none';
+                    return;
+                }
+                
                 const viewportWidth = window.innerWidth;
                 const originalWidth = 2000;
                 const originalHeight = 19200;
@@ -249,6 +340,21 @@
                 
                 panoramaImage.style.height = `${calculatedHeight}px`;
                 panoramaImage.style.width = `${viewportWidth}px`;
+            });
+            
+            // Предотвращаем контекстное меню на мобильных устройствах
+            document.addEventListener('contextmenu', (e) => {
+                if (isMobileDevice()) {
+                    e.preventDefault();
+                }
+            });
+            
+            // Дополнительная проверка при загрузке
+            window.addEventListener('load', () => {
+                if (!isMobileDevice()) {
+                    desktopMessage.style.display = 'flex';
+                    document.querySelector('.container').style.display = 'none';
+                }
             });
         });
     </script>
