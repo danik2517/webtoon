@@ -3,25 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Стартап панорама - Только для мобильных</title>
+    <title>Стартап - полная презентация</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        
-        body, html {
+
+        html, body {
+            width: 100%;
             height: 100%;
             overflow: hidden;
+            position: fixed;
+            touch-action: pan-y;
             background-color: #000;
-            font-family: 'Segoe UI', sans-serif;
         }
-        
+
+        /* Скрываем скроллбар, но сохраняем функцию скролла */
+        body {
+            -ms-overflow-style: none;  /* IE и Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        body::-webkit-scrollbar {
+            display: none;  /* Chrome, Safari и Opera */
+        }
+
+        /* Основной контейнер для скролла */
+        .scroll-container {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Контейнер для изображения с правильными пропорциями */
+        .image-container {
+            width: 100%;
+            height: auto;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Изображение - ширина 100%, высота пропорциональная */
+        .full-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Сообщение для десктопов */
         .desktop-message {
             display: none;
             position: fixed;
@@ -29,333 +65,197 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #111;
+            background-color: #000;
             color: #fff;
-            z-index: 1000;
-            flex-direction: column;
+            font-family: Arial, sans-serif;
             justify-content: center;
             align-items: center;
             text-align: center;
             padding: 20px;
-        }
-        
-        .desktop-message h1 {
-            font-size: 28px;
-            margin-bottom: 20px;
-            color: #4a90e2;
-        }
-        
-        .desktop-message p {
-            font-size: 18px;
-            margin-bottom: 30px;
-            max-width: 600px;
-            line-height: 1.6;
-        }
-        
-        .mobile-icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-        }
-        
-        .container {
-            position: relative;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-        }
-        
-        .panorama-container {
-            width: 100%;
-            height: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
-            cursor: grab;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE и Edge */
-            -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
-        }
-        
-        /* Скрытие скроллбара для Chrome, Safari и Opera */
-        .panorama-container::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .panorama-image {
-            width: auto;
-            height: 100%;
-            object-fit: cover;
-            pointer-events: none;
-        }
-        
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
             z-index: 100;
-            transition: opacity 0.5s ease;
         }
-        
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            border-top-color: #4a90e2;
-            animation: spin 1s ease-in-out infinite;
+
+        .desktop-message h1 {
+            font-size: 24px;
             margin-bottom: 20px;
         }
-        
-        .loading-text {
-            color: #fff;
-            font-size: 18px;
+
+        .desktop-message p {
+            font-size: 16px;
+            line-height: 1.5;
+            max-width: 500px;
         }
-        
-        .instruction {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(255, 255, 255, 0.7);
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            z-index: 10;
-            transition: opacity 3s ease;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        /* Медиа-запрос для определения мобильных устройств */
+
+        /* Проверка на мобильное устройство */
         @media (min-width: 768px) {
             .desktop-message {
                 display: flex;
             }
             
-            .container, .loading-overlay, .instruction {
-                display: none !important;
-            }
-        }
-        
-        @media (max-width: 767px) {
-            .instruction {
-                font-size: 12px;
-                bottom: 10px;
-                padding: 8px 15px;
+            body {
+                overflow: hidden;
             }
             
-            .desktop-message {
-                display: none !important;
+            .scroll-container {
+                display: none;
             }
+        }
+
+        /* Анимация для плавного начала */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .full-image {
+            animation: fadeIn 0.5s ease-out;
         }
     </style>
 </head>
 <body>
-    <div class="desktop-message" id="desktopMessage">
-        <div class="mobile-icon">📱</div>
-        <h1>Только для мобильных устройств</h1>
-        <p>Эта панорамная галерея доступна только на мобильных устройствах. Пожалуйста, откройте эту страницу на смартфоне или планшете.</p>
-        <p><small>Размер экрана вашего устройства слишком велик для просмотра этого контента.</small></p>
-    </div>
-    
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">Загрузка панорамы...</div>
-    </div>
-    
-    <div class="container">
-        <div class="panorama-container" id="panoramaContainer">
-            <img src="Стартап.png" alt="Стартап панорама" class="panorama-image" id="panoramaImage">
+    <!-- Контейнер для скролла -->
+    <div class="scroll-container" id="scrollContainer">
+        <!-- Контейнер для изображения -->
+        <div class="image-container">
+            <img src="Стартап.png" alt="Стартап презентация" class="full-image" id="startupImage">
         </div>
     </div>
     
-    <div class="instruction" id="instruction">
-        Перетаскивайте пальцем для навигации по панораме
+    <!-- Сообщение для десктопных устройств -->
+    <div class="desktop-message">
+        <div>
+            <h1>Доступ только на мобильных устройствах</h1>
+            <p>Этот сайт оптимизирован для просмотра на смартфонах и планшетах. Пожалуйста, откройте его на мобильном устройстве для получения полного опыта.</p>
+        </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const panoramaContainer = document.getElementById('panoramaContainer');
-            const panoramaImage = document.getElementById('panoramaImage');
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            const instruction = document.getElementById('instruction');
-            const desktopMessage = document.getElementById('desktopMessage');
+        // Проверка мобильного устройства
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+        
+        // Рассчитываем и устанавливаем правильные размеры изображения
+        function setupImageDimensions() {
+            const image = document.getElementById('startupImage');
+            const container = document.querySelector('.image-container');
+            const scrollContainer = document.getElementById('scrollContainer');
             
-            // Проверяем, является ли устройство мобильным
-            function isMobileDevice() {
-                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 767;
-            }
+            // Исходные размеры изображения
+            const originalWidth = 2000;
+            const originalHeight = 19200;
             
-            // Если это не мобильное устройство, показываем сообщение
-            if (!isMobileDevice()) {
-                desktopMessage.style.display = 'flex';
-                return; // Прекращаем выполнение скрипта для десктопов
-            }
+            // Рассчитываем соотношение сторон
+            const aspectRatio = originalHeight / originalWidth;
             
-            // Показать инструкцию на 5 секунд, затем скрыть
-            setTimeout(() => {
-                instruction.style.opacity = '0';
-                setTimeout(() => {
-                    instruction.style.display = 'none';
-                }, 3000);
-            }, 5000);
-            
-            // Загрузка изображения
-            panoramaImage.onload = function() {
-                // Скрываем индикатор загрузки
-                setTimeout(() => {
-                    loadingOverlay.style.opacity = '0';
-                    setTimeout(() => {
-                        loadingOverlay.style.display = 'none';
-                    }, 500);
-                }, 500);
+            // При загрузке изображения
+            image.onload = function() {
+                // Получаем фактическую ширину экрана
+                const screenWidth = window.innerWidth;
                 
-                // Устанавливаем правильные размеры изображения
-                const originalWidth = 2000;
-                const originalHeight = 19200;
+                // Рассчитываем высоту для текущей ширины экрана
+                const calculatedHeight = screenWidth * aspectRatio;
                 
-                // Рассчитываем высоту изображения для текущего окна просмотра
-                const viewportWidth = window.innerWidth;
-                const aspectRatio = originalHeight / originalWidth;
-                const calculatedHeight = viewportWidth * aspectRatio;
+                // Устанавливаем ширину 100% и рассчитанную высоту
+                image.style.width = '100%';
+                image.style.height = calculatedHeight + 'px';
                 
-                // Устанавливаем размеры изображения
-                panoramaImage.style.height = `${calculatedHeight}px`;
-                panoramaImage.style.width = `${viewportWidth}px`;
+                // Устанавливаем высоту контейнера
+                container.style.height = calculatedHeight + 'px';
                 
-                // Центрируем изображение по вертикали
-                panoramaContainer.scrollTop = (calculatedHeight - window.innerHeight) / 2;
+                // Настраиваем контейнер для скролла
+                scrollContainer.style.height = '100%';
+                
+                // Прокручиваем к началу
+                scrollContainer.scrollTop = 0;
             };
             
-            // Если изображение уже загружено (из кеша)
-            if (panoramaImage.complete) {
-                panoramaImage.onload();
+            // Обработчик ошибки загрузки изображения
+            image.onerror = function() {
+                console.log('Изображение "Стартап.png" не найдено.');
+                image.style.display = 'none';
+                container.style.backgroundColor = '#333';
+                container.style.height = '100vh';
+                container.innerHTML = '<div style="color: white; text-align: center; padding: 50px; font-family: Arial;">Изображение не найдено. Убедитесь, что файл "Стартап.png" находится в той же папке.</div>';
+            };
+            
+            // Если изображение уже загружено (кешировано)
+            if (image.complete) {
+                image.onload();
+            }
+        }
+        
+        // Нормализуем скорость скролла
+        function normalizeScrollSpeed() {
+            const scrollContainer = document.getElementById('scrollContainer');
+            let lastScrollTop = 0;
+            let scrollSpeed = 1;
+            let ticking = false;
+            
+            if (/iPhone|iPad/i.test(navigator.userAgent)) {
+                scrollSpeed = 0.7;
             }
             
-            // Обработчики для сенсорных устройств (мобильных)
-            let touchStartX, touchStartY;
-            let scrollLeft, scrollTop;
-            let isScrolling = false;
-            
-            panoramaContainer.addEventListener('touchstart', (e) => {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-                scrollLeft = panoramaContainer.scrollLeft;
-                scrollTop = panoramaContainer.scrollTop;
-                isScrolling = true;
-                
-                // Отменяем стандартное поведение браузера
-                e.preventDefault();
-            }, { passive: false });
-            
-            panoramaContainer.addEventListener('touchmove', (e) => {
-                if (!isScrolling) return;
-                
-                const touchX = e.touches[0].clientX;
-                const touchY = e.touches[0].clientY;
-                
-                // Вычисляем разницу для плавного скролла
-                const diffX = (touchStartX - touchX) * 1.2; // Нормальная скорость
-                const diffY = (touchStartY - touchY) * 1.2;
-                
-                panoramaContainer.scrollLeft = scrollLeft + diffX;
-                panoramaContainer.scrollTop = scrollTop + diffY;
-                
-                // Отменяем стандартное поведение браузера
-                e.preventDefault();
-            }, { passive: false });
-            
-            panoramaContainer.addEventListener('touchend', () => {
-                isScrolling = false;
-            });
-            
-            // Обработчик для инерционного скролла (если нужно)
-            let velocityX = 0;
-            let velocityY = 0;
-            let lastTouchX, lastTouchY;
-            let lastMoveTime = 0;
-            
-            // Дополнительная обработка для инерции при быстрых свайпах
-            panoramaContainer.addEventListener('touchmove', (e) => {
-                const currentTime = Date.now();
-                const touchX = e.touches[0].clientX;
-                const touchY = e.touches[0].clientY;
-                
-                if (lastTouchX !== undefined && lastTouchY !== undefined && lastMoveTime !== 0) {
-                    const timeDiff = currentTime - lastMoveTime;
-                    if (timeDiff > 0) {
-                        velocityX = (lastTouchX - touchX) / timeDiff * 30;
-                        velocityY = (lastTouchY - touchY) / timeDiff * 30;
-                    }
-                }
-                
-                lastTouchX = touchX;
-                lastTouchY = touchY;
-                lastMoveTime = currentTime;
-            });
-            
-            panoramaContainer.addEventListener('touchend', () => {
-                // Инерционный скролл
-                if (Math.abs(velocityX) > 0.1 || Math.abs(velocityY) > 0.1) {
-                    const inertiaScroll = () => {
-                        panoramaContainer.scrollLeft += velocityX;
-                        panoramaContainer.scrollTop += velocityY;
+            function handleScroll() {
+                if (!ticking) {
+                    window.requestAnimationFrame(function() {
+                        const currentScroll = scrollContainer.scrollTop;
+                        const delta = currentScroll - lastScrollTop;
                         
-                        // Замедление
-                        velocityX *= 0.95;
-                        velocityY *= 0.95;
-                        
-                        if (Math.abs(velocityX) > 0.1 || Math.abs(velocityY) > 0.1) {
-                            requestAnimationFrame(inertiaScroll);
+                        if (Math.abs(delta) > 10) {
+                            scrollContainer.scrollTop = lastScrollTop + (delta * scrollSpeed);
                         }
-                    };
+                        
+                        lastScrollTop = scrollContainer.scrollTop;
+                        ticking = false;
+                    });
                     
-                    requestAnimationFrame(inertiaScroll);
+                    ticking = true;
                 }
-            });
+            }
             
-            // Обработчик изменения размера окна
-            window.addEventListener('resize', () => {
-                if (!isMobileDevice()) {
-                    // Если после изменения размера это уже не мобильное устройство
-                    desktopMessage.style.display = 'flex';
-                    document.querySelector('.container').style.display = 'none';
-                    return;
+            scrollContainer.addEventListener('scroll', handleScroll, { passive: false });
+        }
+        
+        // Предотвращаем масштабирование при двойном тапе
+        function preventZoomOnDoubleTap() {
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(event) {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
                 }
+                lastTouchEnd = now;
+            }, { passive: false });
+        }
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем, мобильное ли устройство
+            if (!isMobileDevice()) {
+                // На десктопе показываем сообщение и блокируем скролл
+                document.body.style.overflow = 'hidden';
+            } else {
+                // На мобильном устройстве активируем скролл
+                const scrollContainer = document.getElementById('scrollContainer');
+                scrollContainer.style.overflowY = 'auto';
                 
-                const viewportWidth = window.innerWidth;
-                const originalWidth = 2000;
-                const originalHeight = 19200;
-                const aspectRatio = originalHeight / originalWidth;
-                const calculatedHeight = viewportWidth * aspectRatio;
+                // Настраиваем изображение
+                setupImageDimensions();
                 
-                panoramaImage.style.height = `${calculatedHeight}px`;
-                panoramaImage.style.width = `${viewportWidth}px`;
-            });
-            
-            // Предотвращаем контекстное меню на мобильных устройствах
-            document.addEventListener('contextmenu', (e) => {
-                if (isMobileDevice()) {
-                    e.preventDefault();
-                }
-            });
-            
-            // Дополнительная проверка при загрузке
-            window.addEventListener('load', () => {
-                if (!isMobileDevice()) {
-                    desktopMessage.style.display = 'flex';
-                    document.querySelector('.container').style.display = 'none';
-                }
-            });
+                // Нормализуем скорость скролла
+                normalizeScrollSpeed();
+                
+                // Предотвращаем масштабирование
+                preventZoomOnDoubleTap();
+                
+                // Обработчик изменения ориентации/размера экрана
+                window.addEventListener('resize', setupImageDimensions);
+                window.addEventListener('orientationchange', function() {
+                    // Небольшая задержка для корректного определения размеров после поворота
+                    setTimeout(setupImageDimensions, 100);
+                });
+            }
         });
     </script>
 </body>
